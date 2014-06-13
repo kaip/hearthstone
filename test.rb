@@ -5,6 +5,6 @@ require_relative 'main'
 
 describe 'Game' do
   it "should end" do
-    Timeout::timeout(1) { Game.new.play.should == "Player One wins!" }
+    Timeout::timeout(1) { expect(Game.new.play).to eq("Player One wins!") }
   end
 end
