@@ -3,20 +3,21 @@ require 'json'
 class Game
   def initialize
     cards = JSON.parse(File.open("cards.json").read)['cards']
-    cards = cards.map{|card| Card.new(card) }
+    cards = cards.map { |card| Card.new(card) }
     deck_one, deck_two = Deck.new(cards), Deck.new(cards)
     @player_one = Player.new(:first, deck_one)
     @player_two = Player.new(:second, deck_two)
     @player_one.other_player = @player_two
     @player_two.other_player = @player_one
   end
+
   def play
-    while @player_one.alive? && @player_two.alive?
-      [@player_one, @player_two].each {|player| player.take_turn }
+    catch :player_dead do
+      while @player_one.alive? && @player_two.alive?
+        [@player_one, @player_two].each { |player| player.take_turn }
+      end
     end
-  rescue PlayerDeadException
-  ensure
-    return @player_one.alive? ? "Player One wins!": "Player Two wins!"
+    @player_one.alive? ? "Player One wins!" : "Player Two wins!"
   end
 end
 
@@ -27,6 +28,7 @@ class Player
     @in_play = []
     self.life = 30
   end
+
   attr_accessor :life
   attr_writer :other_player
 
@@ -49,7 +51,7 @@ class Player
   end
 
   def take_action
-    if @in_play.any? {|card| card.can_attack? }
+    if @in_play.any? { |card| card.can_attack? }
       @in_play.find { |card| card.can_attack? }.attack(@other_player)
     else
       play(pick_best(@hand))
@@ -88,14 +90,11 @@ class Card
     player.life -= @attack
     puts player.life
     unless player.alive?
-      raise PlayerDeadException
+      throw :player_dead
     end
   end
 
   def can_attack?
     @attack != nil && @attack > 0
   end
-end
-
-class PlayerDeadException < StandardError
 end
